@@ -4,6 +4,7 @@
 
 - Initial release
 - `gotop` and `nvtop` in a split tmux layout
-- One-shot install via `./install.sh`
-- GPU-less hosts show a status pane instead of nvtop
+- `sysdash` opens the dashboard; `sysdash doctor` checks dependencies
+- Install via `./install.sh`
+- Status pane when no GPU is detected
 - Tested on Ubuntu 26.04 LTS

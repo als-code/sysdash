@@ -1,5 +1,3 @@
-"""GPU detection for optional nvtop."""
-
 import os
 import shutil
 import subprocess
@@ -17,28 +15,12 @@ def has_gpu() -> bool:
     if dri.is_dir() and any(dri.glob("card*")):
         return True
 
-    if shutil.which("nvidia-smi"):
+    for cmd, args in (("nvidia-smi", ["-L"]), ("rocm-smi", ["--showid"])):
+        if not shutil.which(cmd):
+            continue
         try:
-            result = subprocess.run(
-                ["nvidia-smi", "-L"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                return True
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            pass
-
-    if shutil.which("rocm-smi"):
-        try:
-            result = subprocess.run(
-                ["rocm-smi", "--showid"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0:
+            r = subprocess.run([cmd, *args], capture_output=True, text=True, timeout=5)
+            if r.returncode == 0 and (r.stdout or "").strip():
                 return True
         except (FileNotFoundError, subprocess.TimeoutExpired):
             pass

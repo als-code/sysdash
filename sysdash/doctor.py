@@ -1,47 +1,27 @@
 import subprocess
 import sys
 
-from rich import box
-from rich.panel import Panel
-
 from sysdash.components import COMPONENTS, is_installed, resolve_binary
 from sysdash.gpu import has_gpu
-from sysdash.style import BORDER_STYLE, console, status_table
+from sysdash.style import console, status_panel
 
 
 def _pip_ok() -> bool:
-    return (
-        subprocess.run(
-            [sys.executable, "-m", "pip", "--version"],
-            capture_output=True,
-            check=False,
-        ).returncode
-        == 0
-    )
+    return subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True).returncode == 0
 
 
 def _pip_version() -> str:
-    result = subprocess.run(
-        [sys.executable, "-m", "pip", "--version"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return (result.stdout or result.stderr).strip().splitlines()[0][:80]
+    r = subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True, text=True)
+    return (r.stdout or r.stderr).strip().splitlines()[0][:80]
 
 
-def _version_of(binary: str) -> str:
-    cmd = resolve_binary(binary)
-    flags = ("-V", "--version", "-v") if binary == "tmux" else ("--version", "-V", "-v")
+def _version_of(name: str) -> str:
+    cmd = resolve_binary(name)
+    flags = ("-V", "--version", "-v") if name == "tmux" else ("--version", "-V", "-v")
     for flag in flags:
         try:
-            result = subprocess.run(
-                [cmd, flag],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            lines = (result.stdout or result.stderr).strip().splitlines()
+            r = subprocess.run([cmd, flag], capture_output=True, text=True, timeout=5)
+            lines = (r.stdout or r.stderr).strip().splitlines()
             if lines:
                 return lines[0][:80]
         except (FileNotFoundError, subprocess.TimeoutExpired, PermissionError):
@@ -51,43 +31,34 @@ def _version_of(binary: str) -> str:
 
 def check_system() -> tuple[list[tuple[str, bool, str]], bool]:
     rows: list[tuple[str, bool, str]] = []
-    ok_all = True
+    ok = True
     gpu = has_gpu()
 
     if _pip_ok():
         rows.append(("pip", True, _pip_version()))
     else:
         rows.append(("pip", False, "run ./install.sh"))
-        ok_all = False
+        ok = False
 
-    for component in COMPONENTS:
-        if component.binary == "nvtop" and not gpu:
+    for c in COMPONENTS:
+        if c.binary == "nvtop" and not gpu:
             rows.append(("nvtop", True, "not required (no GPU)"))
             continue
-
-        if is_installed(component.binary):
-            rows.append((component.binary, True, _version_of(component.binary)))
+        if is_installed(c.binary):
+            rows.append((c.binary, True, _version_of(c.binary)))
         else:
-            rows.append((component.binary, False, "not installed"))
-            ok_all = False
+            rows.append((c.binary, False, "not installed"))
+            ok = False
 
-    return rows, ok_all
+    return rows, ok
 
 
 def run_doctor() -> int:
-    rows, ok_all = check_system()
-    console.print(
-        Panel(
-            status_table(rows),
-            title="Doctor",
-            border_style=BORDER_STYLE,
-            box=box.ROUNDED,
-            padding=(1, 2),
-        )
-    )
+    rows, ok = check_system()
+    status_panel(rows, "Doctor")
 
-    if ok_all:
-        console.print("\n[green]Ready.[/green] Run [bold]sysdash run[/bold].")
+    if ok:
+        console.print("\n[green]Ready.[/green] Run [bold]sysdash[/bold].")
         return 0
 
     console.print("\n[yellow]Missing dependencies.[/yellow] Run [bold]./install.sh[/bold].")

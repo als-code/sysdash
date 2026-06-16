@@ -11,25 +11,12 @@ from rich.panel import Panel
 from sysdash import __version__
 from sysdash.doctor import run_doctor
 from sysdash.install import install_packages
-from sysdash.style import BORDER_STYLE, console, print_panel
+from sysdash.paths import REPO_ROOT
+from sysdash.style import BORDER, console, print_panel, step
 
-ROOT = Path(__file__).resolve().parent.parent
-VENV = ROOT / ".venv"
+VENV = REPO_ROOT / ".venv"
 PY = VENV / "bin" / "python"
 PIP = VENV / "bin" / "pip"
-
-
-def _panel(title: str, text: str, ok: bool | None = None) -> None:
-    mark = {True: "[green]✓[/green] ", False: "[red]✗[/red] ", None: "→ "}[ok]
-    console.print(
-        Panel(
-            f"{mark}{text}",
-            title=title,
-            border_style=BORDER_STYLE,
-            box=box.ROUNDED,
-            padding=(0, 2),
-        )
-    )
 
 
 def _run(cmd: list[str], quiet: bool = False) -> int:
@@ -38,7 +25,7 @@ def _run(cmd: list[str], quiet: bool = False) -> int:
     return subprocess.run(cmd, capture_output=quiet, text=quiet).returncode
 
 
-def _install_venv_deb() -> bool:
+def _install_python_venv_pkg() -> bool:
     ver = f"{sys.version_info.major}.{sys.version_info.minor}"
     for pkg in (f"python{ver}-venv", "python3-venv"):
         if shutil.which("nala") and _run(["sudo", "nala", "install", "-y", pkg]) == 0:
@@ -53,62 +40,62 @@ def _install_venv_deb() -> bool:
 
 
 def ensure_venv() -> bool:
-    _panel("Python", f"{sys.version}")
+    step("Python", str(sys.version))
 
     if PY.exists() and PIP.exists():
-        _panel("venv", "ok", ok=True)
+        step("venv", "ok", ok=True)
         return True
 
     if VENV.exists():
         shutil.rmtree(VENV)
 
-    _panel("venv", "creating…")
+    step("venv", "creating…")
     if _run([sys.executable, "-m", "venv", str(VENV)]) == 0:
-        _panel("venv", str(VENV), ok=True)
+        step("venv", str(VENV), ok=True)
         return True
 
-    if not _install_venv_deb():
-        _panel("venv", "install python3-venv first", ok=False)
+    if not _install_python_venv_pkg():
+        step("venv", "need python3-venv", ok=False)
         return False
 
     if _run([sys.executable, "-m", "venv", str(VENV)]) != 0:
-        _panel("venv", "creation failed", ok=False)
+        step("venv", "failed", ok=False)
         return False
 
-    _panel("venv", str(VENV), ok=True)
+    step("venv", str(VENV), ok=True)
     return True
 
 
 def ensure_pip() -> bool:
     if _run([str(PY), "-m", "pip", "--version"], quiet=True) == 0:
-        _panel("pip", "ok", ok=True)
+        step("pip", "ok", ok=True)
         return True
 
     if _run([str(PY), "-m", "ensurepip", "--upgrade"], quiet=True) == 0:
-        _panel("pip", "ok", ok=True)
+        step("pip", "ok", ok=True)
         return True
 
     try:
         with tempfile.NamedTemporaryFile(suffix=".py") as f:
             urllib.request.urlretrieve("https://bootstrap.pypa.io/get-pip.py", f.name)
             if _run([str(PY), f.name]) != 0:
-                _panel("pip", "bootstrap failed", ok=False)
+                step("pip", "failed", ok=False)
                 return False
     except OSError as err:
-        _panel("pip", str(err), ok=False)
+        step("pip", str(err), ok=False)
         return False
 
-    _panel("pip", "ok", ok=True)
+    step("pip", "ok", ok=True)
     return True
 
 
 def install_editable() -> bool:
-    _panel("sysdash", f"v{__version__}")
+    step("sysdash", f"v{__version__}")
     _run([str(PIP), "install", "--upgrade", "pip", "-q"], quiet=True)
-    if _run([str(PIP), "install", "-e", str(ROOT), "-q"], quiet=True) != 0:
-        _panel("sysdash", "pip install failed", ok=False)
+    if _run([str(PIP), "install", "-e", str(REPO_ROOT), "-q"], quiet=True) != 0:
+        step("sysdash", "failed", ok=False)
         return False
-    _panel("sysdash", "installed", ok=True)
+    step("sysdash", "ok", ok=True)
     return True
 
 
@@ -116,9 +103,9 @@ def run_full_setup() -> int:
     console.print()
     console.print(
         Panel(
-            "[bold]sysdash[/bold]  gotop + nvtop in tmux",
-            title="Setup",
-            border_style=BORDER_STYLE,
+            "gotop + nvtop in tmux",
+            title="sysdash",
+            border_style=BORDER,
             box=box.ROUNDED,
             padding=(1, 2),
         )
@@ -135,7 +122,7 @@ def run_full_setup() -> int:
     console.print()
     code = run_doctor()
     if code == 0:
-        print_panel("Run [bold cyan]sysdash run[/bold cyan]. Exit with [bold]Ctrl+C[/bold].", "Done")
+        print_panel("Run [bold]sysdash[/bold]. [bold]Ctrl+C[/bold] to exit.", "Done")
     return code
 
 

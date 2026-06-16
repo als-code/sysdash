@@ -21,10 +21,12 @@ Requires `sudo` for system packages (`tmux`, `gotop`, and `nvtop` when a GPU is 
 ## Usage
 
 ```bash
-sysdash run         # open dashboard
-sysdash run --stop  # kill tmux session
+sysdash             # open dashboard
+sysdash --stop      # kill tmux session
 sysdash doctor      # check dependencies
 ```
+
+![sysdash doctor](docs/doctor.webp)
 
 | Key | Action |
 |-----|--------|

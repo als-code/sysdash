@@ -8,9 +8,6 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-from rich import box
-from rich.panel import Panel
-
 from sysdash.components import (
     COMPONENTS,
     INSTALL_DIR,
@@ -21,7 +18,7 @@ from sysdash.components import (
 )
 from sysdash.doctor import check_system
 from sysdash.paths import REPO_ROOT, ensure_shell_path, install_cli_command
-from sysdash.style import BORDER_STYLE, console, print_panel, status_table
+from sysdash.style import console, print_panel, status_panel
 
 
 @dataclass
@@ -30,10 +27,8 @@ class PackageManager:
     install_cmd: list[str]
 
 
-def _sudo(cmd: list[str], *, root: bool = True) -> list[str]:
-    if not root or os.geteuid() == 0:
-        return cmd
-    return ["sudo", *cmd]
+def _sudo(cmd: list[str]) -> list[str]:
+    return cmd if os.geteuid() == 0 else ["sudo", *cmd]
 
 
 def detect_package_manager() -> PackageManager | None:
@@ -49,26 +44,9 @@ def detect_package_manager() -> PackageManager | None:
 
 
 def apt_has_package(name: str) -> bool:
-    if not shutil.which("apt-cache"):
-        return False
-    return subprocess.run(["apt-cache", "show", name], capture_output=True).returncode == 0
-
-
-def _audit_rows() -> list[tuple[str, bool, str]]:
-    rows, _ = check_system()
-    return rows
-
-
-def _print_audit(title: str) -> None:
-    console.print(
-        Panel(
-            status_table(_audit_rows()),
-            title=title,
-            border_style=BORDER_STYLE,
-            box=box.ROUNDED,
-            padding=(1, 2),
-        )
-    )
+    return bool(shutil.which("apt-cache")) and subprocess.run(
+        ["apt-cache", "show", name], capture_output=True
+    ).returncode == 0
 
 
 def _run(cmd: list[str]) -> int:
@@ -79,7 +57,7 @@ def _run(cmd: list[str]) -> int:
 def _install_gotop_binary() -> bool:
     url = gotop_download_url()
     if not url:
-        console.print(f"[yellow]  no gotop build for {platform.machine()}[/yellow]")
+        console.print(f"[yellow]  no build for {platform.machine()}[/yellow]")
         return False
 
     dest = INSTALL_DIR / "gotop"
@@ -89,11 +67,11 @@ def _install_gotop_binary() -> bool:
             urllib.request.urlretrieve(url, archive)
             extract_gotop_binary(archive, dest)
     except (OSError, RuntimeError, urllib.error.URLError) as err:
-        console.print(f"[red]  download failed: {err}[/red]")
+        console.print(f"[red]  {err}[/red]")
         return False
 
-    console.print(f"[green]  installed {dest}[/green]")
-    return dest.exists()
+    console.print(f"[green]  {dest}[/green]")
+    return dest.is_file()
 
 
 def _install_one(pm: PackageManager | None, binary: str) -> bool:
@@ -130,14 +108,15 @@ def _link_command() -> None:
     if in_path:
         print_panel(f"[bold]sysdash[/bold] → {shim}", "Command")
     elif ensure_shell_path():
-        print_panel(f"[bold]sysdash[/bold] → {shim}\n\nReload shell: [bold]source ~/.zshrc[/bold]", "Command")
+        print_panel(f"[bold]sysdash[/bold] → {shim}\n\n[bold]source ~/.zshrc[/bold]", "Command")
     else:
         print_panel(f"{shim}\n\nexport PATH=\"$HOME/.local/bin:$PATH\"", "Command")
 
 
 def install_packages() -> int:
     console.print()
-    _print_audit("Status")
+    rows, _ = check_system()
+    status_panel(rows, "Status")
 
     missing = missing_components()
     pm = detect_package_manager()
@@ -148,28 +127,27 @@ def install_packages() -> int:
         return 0
 
     if pm is None:
-        manual = ", ".join(c.binary for c in missing)
-        print_panel(f"No package manager found.\nInstall manually: {manual}", "Install")
+        names = ", ".join(c.binary for c in missing)
+        print_panel(f"No package manager found.\nInstall manually: {names}", "Install")
         return 1
 
     console.print(f"\n[bold]Missing:[/bold] {', '.join(c.binary for c in missing)}\n")
 
-    failed = [b for b in (c.binary for c in missing) if not _install_one(pm, b)]
+    failed = [c.binary for c in missing if not _install_one(pm, c.binary)]
 
     console.print()
-    _print_audit("Result")
+    rows, _ = check_system()
+    status_panel(rows, "Result")
 
     if failed:
-        hint = ""
-        if "gotop" in failed:
-            hint = "\n\ngotop: try [bold]sudo snap install gotop[/bold]"
-        print_panel("Failed:\n" + "\n".join(f"  • {b}" for b in failed) + hint, "Install")
+        extra = "\n\ntry: sudo snap install gotop" if "gotop" in failed else ""
+        print_panel("Failed:\n" + "\n".join(f"  • {b}" for b in failed) + extra, "Install")
         return 1
 
-    rows, ok = check_system()
+    _, ok = check_system()
     if not ok:
         return 1
 
     _link_command()
-    print_panel("System packages installed.", "Install")
+    print_panel("Done.", "Install")
     return 0

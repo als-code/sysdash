@@ -5,7 +5,16 @@ from sysdash.doctor import run_doctor
 from sysdash.install import install_packages
 from sysdash.run import run_dashboard
 
-app = typer.Typer(name="sysdash", no_args_is_help=True)
+app = typer.Typer(name="sysdash", invoke_without_command=True)
+
+
+@app.callback()
+def main(
+    ctx: typer.Context,
+    stop: bool = typer.Option(False, "--stop", help="Kill the tmux session."),
+) -> None:
+    if ctx.invoked_subcommand is None:
+        raise typer.Exit(run_dashboard(stop=stop))
 
 
 @app.command()
@@ -21,8 +30,10 @@ def doctor() -> None:
 
 
 @app.command()
-def run(stop: bool = typer.Option(False, "--stop", help="Kill the tmux session.")) -> None:
-    """Open gotop and nvtop side by side."""
+def run(
+    stop: bool = typer.Option(False, "--stop", help="Kill the tmux session."),
+) -> None:
+    """Open the dashboard (same as running sysdash with no command)."""
     raise typer.Exit(run_dashboard(stop=stop))
 
 

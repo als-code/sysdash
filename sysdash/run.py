@@ -10,7 +10,7 @@ from sysdash.constants import SESSION_NAME, WINDOW_MONITOR
 from sysdash.components import resolve_binary
 from sysdash.doctor import check_system
 from sysdash.gpu import has_gpu
-from sysdash.style import BORDER_STYLE, console, print_panel
+from sysdash.style import BORDER, console, print_panel
 
 
 def _tmux(*args: str) -> subprocess.CompletedProcess[str]:
@@ -77,7 +77,7 @@ def run_dashboard(*, stop: bool = False) -> int:
             "[cyan]Ctrl+C[/cyan]  close dashboard\n"
             "[cyan]Ctrl+b d[/cyan]  detach",
             title="sysdash",
-            border_style=BORDER_STYLE,
+            border_style=BORDER,
             box=box.ROUNDED,
             padding=(1, 2),
         )
