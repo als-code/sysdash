@@ -2,7 +2,6 @@
 
 `gotop` and `nvtop` in one terminal, split with tmux.
 
-Tested on **Ubuntu 26.04 LTS**. Linux only.
 
 ![gotop and nvtop side by side](docs/sysdash.webp)
 
@@ -48,7 +47,7 @@ Without a GPU or drivers, the right pane shows a status message instead of nvtop
 |--------|-----------------|--------|
 | Ubuntu / Debian | `apt`, `nala` | Tested (26.04 LTS) |
 | Fedora | `dnf` | Not tested — [open an issue](https://github.com/als-code/sysdash/issues) |
-| Arch | `pacman` | Not tested — [open an issue](https://github.com/als-code/sysdash/issues) |
+| Arch | `pacman` | Tested (Arch Garuda) |
 
 `gotop` is installed from snap or a GitHub release when it is missing from your repos.
 
