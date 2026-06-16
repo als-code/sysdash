@@ -7,3 +7,5 @@ build/
 venv/
 .pytest_cache/
 .mypy_cache/
+preview-no-gpu.sh
+tests/

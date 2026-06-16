@@ -1,11 +1,15 @@
 """GPU detection for optional nvtop."""
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
 
 
 def has_gpu() -> bool:
+    if os.environ.get("SYSDASH_FORCE_NO_GPU") == "1":
+        return False
+
     if Path("/dev/nvidia0").exists():
         return True
 

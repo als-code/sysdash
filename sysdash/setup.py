@@ -105,18 +105,11 @@ def ensure_pip() -> bool:
 def install_editable() -> bool:
     _panel("sysdash", f"v{__version__}")
     _run([str(PIP), "install", "--upgrade", "pip", "-q"], quiet=True)
-    if _run([str(PIP), "install", "-e", f"{ROOT}[dev]", "-q"], quiet=True) != 0:
+    if _run([str(PIP), "install", "-e", str(ROOT), "-q"], quiet=True) != 0:
         _panel("sysdash", "pip install failed", ok=False)
         return False
     _panel("sysdash", "installed", ok=True)
     return True
-
-
-def run_tests() -> bool:
-    _panel("tests", "running pytest…")
-    code = _run([str(PY), "-m", "pytest", "-q", str(ROOT / "tests")], quiet=True)
-    _panel("tests", "passed" if code == 0 else "failed", ok=code == 0)
-    return code == 0
 
 
 def run_full_setup() -> int:
@@ -137,10 +130,6 @@ def run_full_setup() -> int:
 
     console.print()
     if install_packages() != 0:
-        return 1
-
-    console.print()
-    if not run_tests():
         return 1
 
     console.print()

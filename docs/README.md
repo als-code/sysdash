@@ -1,3 +1,6 @@
 # Screenshots
 
-Add `screenshot.png` here when ready. It will be linked from the README.
+| File | Description |
+|------|-------------|
+| [sysdash.webp](sysdash.webp) | Default layout: `gotop` (left) and `nvtop` (right) |
+| [no_gpu.webp](no_gpu.webp) | Host without a GPU: status pane instead of `nvtop` |

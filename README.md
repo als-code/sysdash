@@ -33,6 +33,10 @@ sysdash doctor      # check dependencies
 
 Without a GPU or drivers, the right pane shows a status message instead of nvtop.
 
+![gotop and nvtop side by side](docs/sysdash.webp)
+
+![no GPU — status pane on the right](docs/no_gpu.webp)
+
 ## Distro support
 
 | Distro | Package manager | Status |
@@ -54,10 +58,6 @@ sysdash is a wrapper around:
 | [tmux](https://github.com/tmux/tmux) | terminal multiplexer | ISC |
 
 sysdash itself is licensed under **GPL-3.0-or-later** (see [LICENSE](LICENSE)).
-
-## Screenshots
-
-Coming soon — place images in [`docs/`](docs/).
 
 ## Changelog
 
