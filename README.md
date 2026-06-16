@@ -4,7 +4,7 @@
 
 Tested on **Ubuntu 26.04 LTS**. Linux only.
 
-Repository: [github.com/als-code/sysdash](https://github.com/als-code/sysdash)
+![gotop and nvtop side by side](docs/sysdash.webp)
 
 ## Install
 
@@ -33,9 +33,12 @@ sysdash doctor      # check dependencies
 
 Without a GPU or drivers, the right pane shows a status message instead of nvtop.
 
-![gotop and nvtop side by side](docs/sysdash.webp)
+<details>
+<summary>No GPU — status pane instead of nvtop</summary>
 
 ![no GPU — status pane on the right](docs/no_gpu.webp)
+
+</details>
 
 ## Distro support
 
