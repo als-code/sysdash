@@ -1,11 +1,9 @@
-import os
 import platform
 import shutil
 import subprocess
 import tempfile
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
 from pathlib import Path
 
 from sysdash.components import (
@@ -17,36 +15,10 @@ from sysdash.components import (
     missing_components,
 )
 from sysdash.doctor import check_system
+from sysdash.hints import apt_has_package
 from sysdash.paths import REPO_ROOT, ensure_shell_path, install_cli_command
+from sysdash.pm import PackageManager, detect_package_manager, sudo_wrap
 from sysdash.style import console, print_panel, status_panel
-
-
-@dataclass
-class PackageManager:
-    name: str
-    install_cmd: list[str]
-
-
-def _sudo(cmd: list[str]) -> list[str]:
-    return cmd if os.geteuid() == 0 else ["sudo", *cmd]
-
-
-def detect_package_manager() -> PackageManager | None:
-    if shutil.which("nala"):
-        return PackageManager("nala", _sudo(["nala", "install", "-y"]))
-    if shutil.which("apt"):
-        return PackageManager("apt", _sudo(["apt", "install", "-y"]))
-    if shutil.which("dnf"):
-        return PackageManager("dnf", _sudo(["dnf", "install", "-y"]))
-    if shutil.which("pacman"):
-        return PackageManager("pacman", _sudo(["pacman", "-S", "--noconfirm"]))
-    return None
-
-
-def apt_has_package(name: str) -> bool:
-    return bool(shutil.which("apt-cache")) and subprocess.run(
-        ["apt-cache", "show", name], capture_output=True
-    ).returncode == 0
 
 
 def _run(cmd: list[str]) -> int:
@@ -88,7 +60,7 @@ def _install_one(pm: PackageManager | None, binary: str) -> bool:
             return True
 
     if binary == "gotop":
-        if shutil.which("snap") and _run(_sudo(["snap", "install", "gotop"])) == 0:
+        if shutil.which("snap") and _run(sudo_wrap(["snap", "install", "gotop"])) == 0:
             if is_installed(binary):
                 return True
         if _install_gotop_binary() and is_installed(binary):
