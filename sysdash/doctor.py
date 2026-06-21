@@ -3,7 +3,9 @@ import sys
 
 from sysdash.components import COMPONENTS, is_installed, resolve_binary
 from sysdash.gpu import has_gpu
-from sysdash.style import console, status_panel
+from sysdash.hints import install_hint, pip_install_hint
+from sysdash.pm import detect_package_manager
+from sysdash.style import console, print_panel, status_panel
 
 
 def _pip_ok() -> bool:
@@ -32,12 +34,13 @@ def _version_of(name: str) -> str:
 def check_system() -> tuple[list[tuple[str, bool, str]], bool]:
     rows: list[tuple[str, bool, str]] = []
     ok = True
+    pm = detect_package_manager()
     gpu = has_gpu()
 
     if _pip_ok():
         rows.append(("pip", True, _pip_version()))
     else:
-        rows.append(("pip", False, "run ./install.sh"))
+        rows.append(("pip", False, pip_install_hint()))
         ok = False
 
     for c in COMPONENTS:
@@ -47,7 +50,7 @@ def check_system() -> tuple[list[tuple[str, bool, str]], bool]:
         if is_installed(c.binary):
             rows.append((c.binary, True, _version_of(c.binary)))
         else:
-            rows.append((c.binary, False, "not installed"))
+            rows.append((c.binary, False, install_hint(c.binary, pm)))
             ok = False
 
     return rows, ok
@@ -61,5 +64,9 @@ def run_doctor() -> int:
         console.print("\n[green]Ready.[/green] Run [bold]sysdash[/bold].")
         return 0
 
-    console.print("\n[yellow]Missing dependencies.[/yellow] Run [bold]./install.sh[/bold].")
+    fixes = [(name, detail) for name, ok, detail in rows if not ok]
+    body = "\n".join(f"[bold]{name}[/bold]  {detail}" for name, detail in fixes)
+    console.print()
+    print_panel(body, "Fix")
+
     return 1
